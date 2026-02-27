@@ -14,6 +14,7 @@
         <module>enigma-loader</module>
         <module>enigma-console</module>
         <module>enigma-dto</module>
+        <module>enigma-app</module>
     </modules>
 
     <properties>
