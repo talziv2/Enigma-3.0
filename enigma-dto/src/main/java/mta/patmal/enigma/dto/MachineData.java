@@ -1,15 +1,16 @@
 package mta.patmal.enigma.dto;
 
-import mta.patmal.enigma.machine.component.code.Code;
 
 public class MachineData {
+    private final String name;  // Machine name from XML (Exercise 3)
     private final int totalRotors;
     private final int totalReflectors;
     private final int messagesProcessed;
     private String originalCode;
     private String currentCode;
 
-    public MachineData(int totalRotors, int totalReflectors, int messagesProcessed, String originalCode, String currentCode) {
+    public MachineData(String name, int totalRotors, int totalReflectors, int messagesProcessed, String originalCode, String currentCode) {
+        this.name = name;
         this.totalRotors = totalRotors;
         this.totalReflectors = totalReflectors;
         this.messagesProcessed = messagesProcessed;
@@ -17,10 +18,17 @@ public class MachineData {
         this.currentCode = currentCode;
     }
 
-    public MachineData(int totalRotors, int totalReflectors, int messagesProcessed) {
-        this(totalRotors, totalReflectors, messagesProcessed, null, null);
+    public MachineData(int totalRotors, int totalReflectors, int messagesProcessed, String originalCode, String currentCode) {
+        this(null, totalRotors, totalReflectors, messagesProcessed, originalCode, currentCode);
     }
 
+    public MachineData(int totalRotors, int totalReflectors, int messagesProcessed) {
+        this(null, totalRotors, totalReflectors, messagesProcessed, null, null);
+    }
+
+    public String getName() {
+        return name;
+    }
     public int getTotalRotors() {
         return totalRotors;
     }

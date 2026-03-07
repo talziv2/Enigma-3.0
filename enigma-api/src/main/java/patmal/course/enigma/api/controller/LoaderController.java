@@ -1,6 +1,7 @@
 package patmal.course.enigma.api.controller;
 
 import mta.patmal.enigma.engine.exceptions.XmlLoadException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,12 +22,16 @@ public class LoaderController {
         this.loaderManager = loaderManager;
     }
 
+    // Directory to store uploaded XML files permanently
+    private static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir") + "/enigma-machines/";
+
     /**
      * Load a machine from XML file
      * POST /enigma/load
      * Content-Type: multipart/form-data
      */
     @PostMapping(value = "/load", consumes = "multipart/form-data")
+
     public ResponseEntity<LoadResponse> loadMachine(@RequestParam(value = "file", required = false) MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest()
@@ -34,22 +39,27 @@ public class LoaderController {
         }
 
         try {
-            // Save uploaded file temporarily
-            Path tempFile = Files.createTempFile("enigma-", ".xml");
-            file.transferTo(tempFile.toFile());
+            // Create upload directory if it doesn't exist
+            Path uploadDir = Path.of(UPLOAD_DIR);
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
 
-            // Get original filename for machine name
+            // Save uploaded file to permanent location
             String originalFilename = file.getOriginalFilename();
+            Path savedFile = uploadDir.resolve(originalFilename != null ? originalFilename : "machine.xml");
+            file.transferTo(savedFile.toFile());
 
-            // Load the machine using original filename
-            String machineName = loaderManager.loadMachine(tempFile.toString(), originalFilename);
-
-            // Clean up temp file
-            Files.deleteIfExists(tempFile);
+            // Load the machine (file is NOT deleted - needed for creating sessions later)
+            String machineName = loaderManager.loadMachine(savedFile.toString(), originalFilename);
 
             return ResponseEntity.ok(new LoadResponse(true, machineName, null));
         } catch (XmlLoadException e) {
             return ResponseEntity.ok(new LoadResponse(false, null, e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            // Machine with same name already exists
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new LoadResponse(false, null, e.getMessage()));
         } catch (IOException e) {
             return ResponseEntity.badRequest()
                     .body(new LoadResponse(false, null, "Failed to process file: " + e.getMessage()));

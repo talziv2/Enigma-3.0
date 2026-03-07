@@ -45,7 +45,8 @@
                 </executions>
                 <configuration>
                     <sources>
-                        <source>${project.parent.basedir}/xml-files/Enigma-Ex2.xsd</source>
+                        <!-- Updated to use Exercise 3 schema (has "name" attribute) -->
+                        <source>${project.parent.basedir}/xml-files/Enigma-Ex3.xsd</source>
                     </sources>
                     <outputDirectory>${project.basedir}/src/main/java</outputDirectory>
                     <clearOutputDir>false</clearOutputDir>

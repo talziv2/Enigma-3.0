@@ -14,25 +14,43 @@ import java.util.Map;
 @Service
 public class LoaderManager {
 
-    // Map of machine name -> Engine instance (supports multiple machines)
-    private final Map<String, Engine> machines = new HashMap<>();
+    // Map of machine name -> XML file path (to create new engines per session)
+    private final Map<String, String> machineXmlPaths = new HashMap<>();
 
     /**
      * Load machine from XML file path
      * @param xmlPath path to the XML configuration file
-     * @param originalFilename the original filename (for machine name)
-     * @return the machine name (derived from original filename)
+     * @param originalFilename the original filename (fallback for machine name)
+     * @return the machine name (from XML's name attribute, or filename as fallback)
      * @throws XmlLoadException if loading fails
+     * @throws IllegalArgumentException if machine with same name already exists
      */
-    public String loadMachine(String xmlPath, String originalFilename) throws XmlLoadException {
+    public String loadMachine(String xmlPath, String originalFilename) throws XmlLoadException, IllegalArgumentException {
+        // Create a temporary engine to validate and get machine name
         Engine engine = new EngineImpl();
         engine.loadXml(xmlPath);
 
-        // Use original filename (without extension) as machine name
-        String machineName = extractMachineName(originalFilename);
+        // Try to get machine name from XML's name attribute
+        String machineName;
+        try {
+            MachineData machineData = engine.showMachineData();
+            machineName = machineData.getName();
+            // If name is null or empty, fallback to filename
+            if (machineName == null || machineName.trim().isEmpty()) {
+                machineName = extractMachineName(originalFilename);
+            }
+        } catch (Exception e) {
+            // Fallback to filename if can't get name from XML
+            machineName = extractMachineName(originalFilename);
+        }
 
-        // Store the engine with its machine name
-        machines.put(machineName, engine);
+        // Check if machine with this name already exists (per exercise 3 requirement)
+        if (machineXmlPaths.containsKey(machineName)) {
+            throw new IllegalArgumentException("Machine with name '" + machineName + "' already exists. Machine names must be unique.");
+        }
+
+        // Store the XML path (not the engine) so we can create new engines per session
+        machineXmlPaths.put(machineName, xmlPath);
 
         return machineName;
     }
@@ -60,12 +78,23 @@ public class LoaderManager {
     }
 
     /**
-     * Get engine by machine name
+     * Create a NEW engine instance for a machine (each session gets its own engine)
      * @param machineName the machine name
-     * @return the Engine instance or null if not found
+     * @return a new Engine instance or null if machine not found
      */
-    public Engine getEngine(String machineName) {
-        return machines.get(machineName);
+    public Engine createNewEngine(String machineName) {
+        String xmlPath = machineXmlPaths.get(machineName);
+        if (xmlPath == null) {
+            return null;
+        }
+
+        try {
+            Engine engine = new EngineImpl();
+            engine.loadXml(xmlPath);
+            return engine;
+        } catch (XmlLoadException e) {
+            return null;
+        }
     }
 
     /**
@@ -74,15 +103,15 @@ public class LoaderManager {
      * @return true if machine exists
      */
     public boolean machineExists(String machineName) {
-        return machines.containsKey(machineName);
+        return machineXmlPaths.containsKey(machineName);
     }
 
     /**
      * Get all loaded machine names
-     * @return map of machine names to engines
+     * @return set of machine names
      */
-    public Map<String, Engine> getAllMachines() {
-        return new HashMap<>(machines);
+    public java.util.Set<String> getAllMachineNames() {
+        return new java.util.HashSet<>(machineXmlPaths.keySet());
     }
 }
 

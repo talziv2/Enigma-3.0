@@ -62,6 +62,17 @@ public class XmlLoader {
         return lastLoadedEnigma;
     }
 
+    /**
+     * Get the machine name from the XML's name attribute (Exercise 3)
+     * @return the machine name or null if not available
+     */
+    public String getMachineName() {
+        if (lastLoadedEnigma == null) {
+            return null;
+        }
+        return lastLoadedEnigma.getName();
+    }
+
     public String getABC() {
         if (lastLoadedEnigma == null || lastLoadedEnigma.getABC() == null) {
             return null;

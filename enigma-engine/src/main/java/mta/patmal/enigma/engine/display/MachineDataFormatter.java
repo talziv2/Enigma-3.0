@@ -21,7 +21,10 @@ public class MachineDataFormatter {
 
     public MachineData createMachineData(MachineImpl machineImpl, String originalCodeString, 
                                          int totalRotors, int totalReflectors, int messagesProcessed) {
-        MachineData machineData = new MachineData(totalRotors, totalReflectors, messagesProcessed);
+        // Get machine name from XML (Exercise 3)
+        String machineName = xmlLoader.getMachineName();
+
+        MachineData machineData = new MachineData(machineName, totalRotors, totalReflectors, messagesProcessed, null, null);
 
         Code currentCode = (machineImpl != null) ? machineImpl.getCode() : null;
 
