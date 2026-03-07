@@ -15,6 +15,7 @@
         <module>enigma-console</module>
         <module>enigma-dto</module>
         <module>enigma-app</module>
+        <module>enigma-api</module>
     </modules>
 
     <properties>

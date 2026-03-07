@@ -9,7 +9,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>enigma-app</artifactId>
+    <artifactId>enigma-api</artifactId>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -19,15 +19,23 @@
     </properties>
 
     <dependencies>
+        <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Enigma API - contains controllers and managers -->
+        <!-- Enigma Engine - contains the logic -->
         <dependency>
             <groupId>patmal.course.enigma</groupId>
-            <artifactId>enigma-api</artifactId>
+            <artifactId>enigma-engine</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Enigma Loader - for loading XML -->
+        <dependency>
+            <groupId>patmal.course.enigma</groupId>
+            <artifactId>enigma-loader</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
@@ -44,24 +52,5 @@
         </dependencies>
     </dependencyManagement>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring.boot.version}</version>
-                <configuration>
-                    <mainClass>patmal.course.enigma.app.EnigmaApplication</mainClass>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
 </project>
+
