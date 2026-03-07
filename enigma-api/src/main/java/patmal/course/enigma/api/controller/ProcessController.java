@@ -1,13 +1,12 @@
 package patmal.course.enigma.api.controller;
 
-import mta.patmal.enigma.engine.Engine;
 import mta.patmal.enigma.engine.exceptions.CodeNotConfiguredException;
 import mta.patmal.enigma.engine.exceptions.InvalidInputException;
 import mta.patmal.enigma.engine.exceptions.MachineNotLoadedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import patmal.course.enigma.api.manager.SessionManager;
+import patmal.course.enigma.api.manager.ProcessManager;
 
 /**
  * REST Controller for processing (encrypting/decrypting) text.
@@ -17,10 +16,10 @@ import patmal.course.enigma.api.manager.SessionManager;
 @RequestMapping("/enigma")
 public class ProcessController {
 
-    private final SessionManager sessionManager;
+    private final ProcessManager processManager;
 
-    public ProcessController(SessionManager sessionManager) {
-        this.sessionManager = sessionManager;
+    public ProcessController(ProcessManager processManager) {
+        this.processManager = processManager;
     }
 
     /**
@@ -36,17 +35,12 @@ public class ProcessController {
     public ResponseEntity<?> process(
             @RequestParam("sessionID") String sessionId,
             @RequestBody ProcessRequest request) {
-
-        SessionManager.Session session = sessionManager.getSession(sessionId);
-        if (session == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("Unknown sessionID: " + sessionId));
-        }
-
         try {
-            Engine engine = session.getEngine();
-            String output = engine.process(request.getInput());
+            String output = processManager.process(sessionId, request.getInput());
             return ResponseEntity.ok(new ProcessResponse(true, output, null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(e.getMessage()));
         } catch (MachineNotLoadedException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponse("Machine not loaded"));
@@ -118,4 +112,3 @@ public class ProcessController {
         }
     }
 }
-

@@ -3,14 +3,13 @@ package patmal.course.enigma.api.controller;
 import mta.patmal.enigma.dto.CodeConfigurationRequestDTO;
 import mta.patmal.enigma.dto.CodeConfigurationResultDTO;
 import mta.patmal.enigma.dto.MachineConfigSpecs;
-import mta.patmal.enigma.engine.Engine;
 import mta.patmal.enigma.engine.exceptions.CodeNotConfiguredException;
 import mta.patmal.enigma.engine.exceptions.InvalidConfigurationException;
 import mta.patmal.enigma.engine.exceptions.MachineNotLoadedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import patmal.course.enigma.api.manager.SessionManager;
+import patmal.course.enigma.api.manager.ConfigurationManager;
 
 import java.util.List;
 
@@ -22,29 +21,24 @@ import java.util.List;
 @RequestMapping("/enigma/config")
 public class ConfigurationController {
 
-    private final SessionManager sessionManager;
+    private final ConfigurationManager configurationManager;
 
-    public ConfigurationController(SessionManager sessionManager) {
-        this.sessionManager = sessionManager;
+    public ConfigurationController(ConfigurationManager configurationManager) {
+        this.configurationManager = configurationManager;
     }
 
     /**
      * Get current machine configuration specs.
-     *
      * GET /enigma/config?sessionID=xxx
      */
     @GetMapping
     public ResponseEntity<?> getConfiguration(@RequestParam("sessionID") String sessionId) {
-        SessionManager.Session session = sessionManager.getSession(sessionId);
-        if (session == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("Unknown sessionID: " + sessionId));
-        }
-
         try {
-            Engine engine = session.getEngine();
-            MachineConfigSpecs specs = engine.getMachineConfigSpecs();
+            MachineConfigSpecs specs = configurationManager.getConfigSpecs(sessionId);
             return ResponseEntity.ok(specs);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(e.getMessage()));
         } catch (MachineNotLoadedException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponse("Machine not loaded"));
@@ -53,32 +47,24 @@ public class ConfigurationController {
 
     /**
      * Configure machine code manually.
-     *
      * PUT /enigma/config/manual?sessionID=xxx
      */
     @PutMapping("/manual")
     public ResponseEntity<?> configureManual(
             @RequestParam("sessionID") String sessionId,
             @RequestBody ManualConfigRequest request) {
-
-        SessionManager.Session session = sessionManager.getSession(sessionId);
-        if (session == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("Unknown sessionID: " + sessionId));
-        }
-
         try {
-            Engine engine = session.getEngine();
-
             CodeConfigurationRequestDTO configRequest = new CodeConfigurationRequestDTO(
                     request.getRotorIDs(),
                     request.getStartPositions(),
                     request.getReflectorID(),
                     request.getPlugPairs()
             );
-
-            CodeConfigurationResultDTO result = engine.codeManual(configRequest);
+            CodeConfigurationResultDTO result = configurationManager.configureManual(sessionId, configRequest);
             return ResponseEntity.ok(new ConfigResponse(true, result.getFormattedCode(), null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(e.getMessage()));
         } catch (MachineNotLoadedException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponse("Machine not loaded"));
@@ -90,21 +76,16 @@ public class ConfigurationController {
 
     /**
      * Configure machine code automatically (random).
-     *
      * PUT /enigma/config/automatic?sessionID=xxx
      */
     @PutMapping("/automatic")
     public ResponseEntity<?> configureAutomatic(@RequestParam("sessionID") String sessionId) {
-        SessionManager.Session session = sessionManager.getSession(sessionId);
-        if (session == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("Unknown sessionID: " + sessionId));
-        }
-
         try {
-            Engine engine = session.getEngine();
-            CodeConfigurationResultDTO result = engine.codeAutomatic();
+            CodeConfigurationResultDTO result = configurationManager.configureAutomatic(sessionId);
             return ResponseEntity.ok(new ConfigResponse(true, result.getFormattedCode(), null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(e.getMessage()));
         } catch (MachineNotLoadedException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponse("Machine not loaded"));
@@ -116,21 +97,16 @@ public class ConfigurationController {
 
     /**
      * Reset machine to original code configuration.
-     *
      * PUT /enigma/config/reset?sessionID=xxx
      */
     @PutMapping("/reset")
     public ResponseEntity<?> resetConfiguration(@RequestParam("sessionID") String sessionId) {
-        SessionManager.Session session = sessionManager.getSession(sessionId);
-        if (session == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("Unknown sessionID: " + sessionId));
-        }
-
         try {
-            Engine engine = session.getEngine();
-            engine.resetCurrentCode();
+            configurationManager.resetConfiguration(sessionId);
             return ResponseEntity.ok(new ConfigResponse(true, "Code reset successfully", null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(e.getMessage()));
         } catch (MachineNotLoadedException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponse("Machine not loaded"));
