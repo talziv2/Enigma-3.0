@@ -3,19 +3,40 @@ package patmal.course.enigma.api.manager;
 import mta.patmal.enigma.dto.MachineData;
 import mta.patmal.enigma.engine.Engine;
 import mta.patmal.enigma.engine.EngineImpl;
-import mta.patmal.enigma.engine.exceptions.MachineNotLoadedException;
 import mta.patmal.enigma.engine.exceptions.XmlLoadException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import patmal.course.enigma.dal.entity.MachineEntity;
+import patmal.course.enigma.dal.entity.MachineRotorEntity;
+import patmal.course.enigma.dal.entity.MachineReflectorEntity;
+import patmal.course.enigma.dal.repository.MachineRepository;
+import patmal.course.enigma.dal.repository.MachineRotorRepository;
+import patmal.course.enigma.dal.repository.MachineReflectorRepository;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class LoaderManager {
 
     // Map of machine name -> XML file path (to create new engines per session)
     private final Map<String, String> machineXmlPaths = new HashMap<>();
+
+    // Database repositories
+    private final MachineRepository machineRepository;
+    private final MachineRotorRepository machineRotorRepository;
+    private final MachineReflectorRepository machineReflectorRepository;
+
+    public LoaderManager(MachineRepository machineRepository,
+                         MachineRotorRepository machineRotorRepository,
+                         MachineReflectorRepository machineReflectorRepository) {
+        this.machineRepository = machineRepository;
+        this.machineRotorRepository = machineRotorRepository;
+        this.machineReflectorRepository = machineReflectorRepository;
+    }
 
     /**
      * Load machine from XML file path
@@ -25,6 +46,7 @@ public class LoaderManager {
      * @throws XmlLoadException if loading fails
      * @throws IllegalArgumentException if machine with same name already exists
      */
+    @Transactional
     public String loadMachine(String xmlPath, String originalFilename) throws XmlLoadException, IllegalArgumentException {
         // Create a temporary engine to validate and get machine name
         Engine engine = new EngineImpl();
@@ -44,10 +66,18 @@ public class LoaderManager {
             machineName = extractMachineName(originalFilename);
         }
 
-        // Check if machine with this name already exists (per exercise 3 requirement)
+        // Check if machine with this name already exists in memory
         if (machineXmlPaths.containsKey(machineName)) {
             throw new IllegalArgumentException("Machine with name '" + machineName + "' already exists. Machine names must be unique.");
         }
+
+        // Check if machine with this name already exists in database
+        if (machineRepository.existsByName(machineName)) {
+            throw new IllegalArgumentException("Machine with name '" + machineName + "' already exists in database. Machine names must be unique.");
+        }
+
+        // Save to database
+        saveMachineToDatabase(engine, machineName);
 
         // Store the XML path (not the engine) so we can create new engines per session
         machineXmlPaths.put(machineName, xmlPath);
@@ -56,13 +86,53 @@ public class LoaderManager {
     }
 
     /**
-     * Load machine from XML file path (uses path for machine name)
-     * @param xmlPath path to the XML configuration file
-     * @return the machine name (derived from filename)
-     * @throws XmlLoadException if loading fails
+     * Save machine and its components to database
      */
-    public String loadMachine(String xmlPath) throws XmlLoadException {
-        return loadMachine(xmlPath, xmlPath);
+    private void saveMachineToDatabase(Engine engine, String machineName) {
+        try {
+            // Get machine specs
+            var specs = engine.getMachineConfigSpecs();
+            String abc = specs.getAlphabet();
+            int rotorsCount = specs.getRequiredRotorsCount();
+
+            // Save machine entity
+            MachineEntity machineEntity = new MachineEntity(machineName, rotorsCount, abc);
+            machineEntity = machineRepository.save(machineEntity);
+
+            // Save rotors with actual details from XML
+            var rotorDetails = specs.getRotorDetails();
+            if (rotorDetails != null) {
+                for (var rotor : rotorDetails) {
+                    MachineRotorEntity rotorEntity = new MachineRotorEntity(
+                        machineEntity,
+                        rotor.getId(),
+                        rotor.getNotch(),
+                        rotor.getWiringRight(),
+                        rotor.getWiringLeft()
+                    );
+                    machineRotorRepository.save(rotorEntity);
+                }
+            }
+
+            // Save reflectors with actual details from XML
+            var reflectorDetails = specs.getReflectorDetails();
+            if (reflectorDetails != null) {
+                for (var reflector : reflectorDetails) {
+                    // Use native query to handle PostgreSQL enum type
+                    UUID reflectorUuid = UUID.randomUUID();
+                    machineReflectorRepository.insertReflector(
+                        reflectorUuid,
+                        machineEntity.getId(),
+                        reflector.getId(),  // Roman numeral from XML
+                        reflector.getInput(),
+                        reflector.getOutput()
+                    );
+                }
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save machine to database: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -104,14 +174,6 @@ public class LoaderManager {
      */
     public boolean machineExists(String machineName) {
         return machineXmlPaths.containsKey(machineName);
-    }
-
-    /**
-     * Get all loaded machine names
-     * @return set of machine names
-     */
-    public java.util.Set<String> getAllMachineNames() {
-        return new java.util.HashSet<>(machineXmlPaths.keySet());
     }
 }
 

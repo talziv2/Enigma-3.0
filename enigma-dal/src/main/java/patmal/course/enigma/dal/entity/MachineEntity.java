@@ -1,50 +1,45 @@
 package patmal.course.enigma.dal.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 /**
  * JPA Entity representing an Enigma machine in the database.
  * Maps to the "machines" table.
- *
- * Each row in the table = one MachineEntity object
  */
 @Entity
 @Table(name = "machines")
 public class MachineEntity {
 
-    @Id  // Primary key
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Auto-increment
-    private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    @Column(name = "name", unique = true, nullable = false)  // Machine name must be unique
+    @Column(name = "name", unique = true, nullable = false)
     private String name;
 
-    @Column(name = "abc", nullable = false)  // The alphabet (e.g., "ABCDEF")
-    private String abc;
-
-    @Column(name = "rotors_count", nullable = false)  // How many rotors this machine uses
+    @Column(name = "rotors_count", nullable = false)
     private int rotorsCount;
 
-    @Column(name = "xml_content", columnDefinition = "TEXT")  // Original XML file content
-    private String xmlContent;
+    @Column(name = "abc", nullable = false)
+    private String abc;
 
     // Default constructor - required by JPA
     public MachineEntity() {
     }
 
-    public MachineEntity(String name, String abc, int rotorsCount, String xmlContent) {
+    public MachineEntity(String name, int rotorsCount, String abc) {
         this.name = name;
-        this.abc = abc;
         this.rotorsCount = rotorsCount;
-        this.xmlContent = xmlContent;
+        this.abc = abc;
     }
 
     // Getters and Setters
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -56,14 +51,6 @@ public class MachineEntity {
         this.name = name;
     }
 
-    public String getAbc() {
-        return abc;
-    }
-
-    public void setAbc(String abc) {
-        this.abc = abc;
-    }
-
     public int getRotorsCount() {
         return rotorsCount;
     }
@@ -72,12 +59,12 @@ public class MachineEntity {
         this.rotorsCount = rotorsCount;
     }
 
-    public String getXmlContent() {
-        return xmlContent;
+    public String getAbc() {
+        return abc;
     }
 
-    public void setXmlContent(String xmlContent) {
-        this.xmlContent = xmlContent;
+    public void setAbc(String abc) {
+        this.abc = abc;
     }
 }
 

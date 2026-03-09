@@ -5,6 +5,8 @@ import mta.patmal.enigma.dto.CodeConfigurationResultDTO;
 import mta.patmal.enigma.dto.MachineConfigSpecs;
 import mta.patmal.enigma.dto.MachineData;
 import mta.patmal.enigma.dto.ProcessingEntryDTO;
+import mta.patmal.enigma.dto.ReflectorDetails;
+import mta.patmal.enigma.dto.RotorDetails;
 import mta.patmal.enigma.dto.StatisticsDTO;
 import mta.patmal.enigma.engine.codeconfig.AutomaticCodeConfigurator;
 import mta.patmal.enigma.engine.codeconfig.ManualCodeConfigurator;
@@ -86,7 +88,30 @@ public class EngineImpl implements Engine {
                 .collect(Collectors.toList());
 
         int requiredRotors = xmlLoader.getRequiredRotorsCount();
-        return new MachineConfigSpecs(availableRotorIds, availableReflectorIds, requiredRotors, abc);
+
+        // Get rotor details from XmlLoader
+        List<RotorDetails> rotorDetails = new ArrayList<>();
+        for (var rotorInfo : xmlLoader.getAllRotorDetails()) {
+            rotorDetails.add(new RotorDetails(
+                rotorInfo.id,
+                rotorInfo.notch,
+                rotorInfo.wiringRight,
+                rotorInfo.wiringLeft
+            ));
+        }
+
+        // Get reflector details from XmlLoader
+        List<ReflectorDetails> reflectorDetails = new ArrayList<>();
+        for (var reflectorInfo : xmlLoader.getAllReflectorDetails()) {
+            reflectorDetails.add(new ReflectorDetails(
+                reflectorInfo.id,
+                reflectorInfo.input,
+                reflectorInfo.output
+            ));
+        }
+
+        return new MachineConfigSpecs(availableRotorIds, availableReflectorIds, requiredRotors, abc,
+                                      rotorDetails, reflectorDetails);
     }
 
     @Override
