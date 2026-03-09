@@ -9,11 +9,14 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
-        <module>enigma-machine</module>
-        <module>enigma-engine</module>
-        <module>enigma-loader</module>
-        <module>enigma-console</module>
-        <module>enigma-dto</module>
+        <!-- Logic modules are grouped under enigma-logic aggregator -->
+        <!-- (includes: machine, engine, loader, sessions, dto, console) -->
+        <module>enigma-logic</module>
+
+        <!-- Other modules (per exercise 3 requirements) -->
+        <module>enigma-dal</module>
+        <module>enigma-api</module>
+        <module>enigma-app</module>
     </modules>
 
     <properties>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Parent is the main aggregator -->
+    <parent>
+        <groupId>patmal.course.enigma</groupId>
+        <artifactId>enigma-aggregator</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>enigma-logic</artifactId>
+
+    <!-- This is an aggregator - it only groups modules, no code -->
+    <packaging>pom</packaging>
+
+    <!--
+        These modules are grouped under enigma-logic.
+        The ../ means they are sibling folders (not inside enigma-logic folder).
+        This is a "flat" structure - modules don't need to be physically inside.
+
+        Groups: machine, engine, loader, sessions, dto, console (and any other logic modules)
+    -->
+    <modules>
+        <module>../enigma-machine</module>
+        <module>../enigma-engine</module>
+        <module>../enigma-loader</module>
+        <module>../enigma-sessions</module>
+        <module>../enigma-dto</module>
+        <module>../enigma-console</module>
+    </modules>
+
+</project>
+
